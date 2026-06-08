@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌙 Admin Night</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --bg2: #161b22;
+      --border: rgba(255,255,255,0.08);
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --r: 14px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 15% 10%, rgba(88,28,135,0.2) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 35% at 85% 90%, rgba(29,78,216,0.15) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Sidebar ─────────────────────────────── */
+    .sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 190;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .sidebar-overlay.open { opacity: 1; pointer-events: all; }
+
+    .sidebar {
+      position: fixed;
+      left: 0; top: 0; bottom: 0;
+      width: 270px;
+      background: var(--bg2);
+      border-right: 1px solid rgba(255,255,255,0.1);
+      z-index: 200;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .sidebar.open { transform: translateX(0); }
+
+    .sidebar-head {
+      padding: 1.1rem 1.25rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .sidebar-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .sidebar-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 0.15rem 0.3rem;
+      border-radius: 6px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .sidebar-close:hover { background: rgba(255,255,255,0.07); color: var(--text); }
+
+    .session-list { overflow-y: auto; flex: 1; }
+
+    .sidebar-footer {
+      padding: 1.25rem 1.5rem;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    .sidebar-logo {
+      width: 80px;
+      opacity: 0.35;
+      display: block;
+    }
+
+    .session-item {
+      padding: 0.9rem 1.25rem;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .session-item:hover { background: rgba(255,255,255,0.04); }
+    .session-item.viewing { background: rgba(255,255,255,0.07); }
+
+    .session-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .session-info { flex: 1; min-width: 0; }
+
+    .session-date {
+      font-size: 0.875rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .session-meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.1rem;
+    }
+
+    /* ── Header ─────────────────────────────── */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(13,17,23,0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      min-width: 0;
+    }
+
+    .hdr-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 0.3rem 0.45rem;
+      border-radius: 8px;
+      transition: background 0.15s, color 0.15s;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .hdr-btn:hover { background: rgba(255,255,255,0.07); color: var(--text); }
+
+    .header-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #c084fc, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      white-space: nowrap;
+    }
+
+    .header-title-past {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .readonly-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      background: rgba(245,158,11,0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245,158,11,0.3);
+      border-radius: 20px;
+      padding: 0.15rem 0.55rem;
+      flex-shrink: 0;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .online-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 6px rgba(34,197,94,0.7);
+    }
+
+    .clock-wrap { text-align: right; }
+    .clock-date { font-size: 0.7rem; color: var(--muted); line-height: 1; }
+    .clock-time { font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.3; }
+
+    /* ── Board ───────────────────────────────── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      color: var(--muted);
+      text-align: center;
+      padding: 2rem;
+      position: relative;
+      z-index: 1;
+    }
+    .empty-state .e-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+    .empty-state p { font-size: 0.95rem; line-height: 1.7; }
+
+    .board {
+      position: relative;
+      z-index: 1;
+      padding: 1.5rem;
+      columns: 300px;
+      column-gap: 1.25rem;
+    }
+
+    /* ── Card ────────────────────────────────── */
+    .card {
+      break-inside: avoid;
+      margin-bottom: 1.25rem;
+      border-radius: var(--r);
+      border: 1px solid;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover { transform: translateY(-3px); }
+
+    .card-head {
+      padding: 0.85rem 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .card-name {
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .me-tag {
+      font-size: 0.65rem;
+      font-weight: 500;
+      opacity: 0.55;
+      background: rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 0.1rem 0.4rem;
+    }
+
+    .btn-time {
+      border: 1px solid;
+      border-radius: 20px;
+      padding: 0.28rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn-time:hover { filter: brightness(1.15); }
+
+    @keyframes checkin-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(74,222,128,0.7), 0 0 0 0 rgba(74,222,128,0.4); opacity: 1; }
+      50% { box-shadow: 0 0 10px 4px rgba(74,222,128,0.35), 0 0 20px 8px rgba(74,222,128,0.15); opacity: 0.85; }
+    }
+    @keyframes checkout-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(248,113,113,0.7), 0 0 0 0 rgba(248,113,113,0.4); opacity: 1; }
+      50% { box-shadow: 0 0 10px 4px rgba(248,113,113,0.35), 0 0 20px 8px rgba(248,113,113,0.15); opacity: 0.85; }
+    }
+    .btn-checkin  { animation: checkin-pulse  1.8s ease-in-out infinite; }
+    .btn-checkout { animation: checkout-pulse 1.8s ease-in-out infinite; }
+
+    .card-times {
+      padding: 0.55rem 1.1rem;
+      display: flex;
+      gap: 0.65rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      flex-wrap: wrap;
+    }
+
+    .tbadge {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.78rem;
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      padding: 0.25rem 0.65rem;
+    }
+    .tbadge .lbl { color: var(--muted); }
+    .tbadge .val { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    .card-todos {
+      padding: 0.75rem 1.1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .sec-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .todo-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.3rem 0;
+      font-size: 0.875rem;
+    }
+    .todo-item.done .todo-text { text-decoration: line-through; color: var(--muted); }
+
+    .chk {
+      width: 17px; height: 17px;
+      flex-shrink: 0;
+      border-radius: 5px;
+      border: 1.5px solid rgba(255,255,255,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 900;
+      transition: all 0.15s;
+    }
+    .chk.clickable { cursor: pointer; }
+    .chk.clickable:hover { border-color: rgba(255,255,255,0.5); }
+
+    .todo-text { flex: 1; line-height: 1.4; }
+
+    .del-btn {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.75rem;
+      padding: 0 0.2rem;
+      line-height: 1;
+      transition: opacity 0.15s;
+    }
+    .todo-item:hover .del-btn { opacity: 1; }
+
+    .add-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .add-input {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 0.38rem 0.7rem;
+      color: var(--text);
+      font-size: 0.83rem;
+      outline: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .add-input::placeholder { color: var(--muted); }
+    .add-input:focus { border-color: rgba(255,255,255,0.22); background: rgba(255,255,255,0.08); }
+
+    .add-btn {
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 0.38rem 0.7rem;
+      font-size: 0.83rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: filter 0.15s;
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+    }
+    .add-btn:hover { filter: brightness(1.2); }
+
+    .card-comments { padding: 0.75rem 1.1rem; }
+
+    .comment {
+      padding: 0.4rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .comment:last-of-type { border-bottom: none; }
+
+    .comment-meta {
+      display: flex;
+      align-items: baseline;
+      gap: 0.4rem;
+      margin-bottom: 0.1rem;
+    }
+    .comment-author { font-size: 0.78rem; font-weight: 700; }
+    .comment-time { font-size: 0.7rem; color: var(--muted); }
+    .comment-text { font-size: 0.85rem; line-height: 1.45; }
+
+    .no-item { font-size: 0.8rem; color: var(--muted); padding: 0.2rem 0 0.4rem; }
+
+    /* ── Modal ───────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+    .modal-overlay.hidden { display: none; }
+
+    .modal {
+      background: var(--bg2);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 2rem 1.75rem;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+    }
+
+    .modal-icon { font-size: 3rem; margin-bottom: 0.75rem; }
+    .modal-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.35rem; }
+    .modal-sub { color: var(--muted); font-size: 0.88rem; margin-bottom: 0.75rem; }
+    .modal-sub:empty { display: none; }
+
+    .modal-input {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 11px;
+      padding: 0.7rem 1rem;
+      color: var(--text);
+      font-size: 1rem;
+      text-align: center;
+      outline: none;
+      margin-top: 1.25rem;
+      margin-bottom: 0.65rem;
+      transition: border-color 0.15s;
+    }
+    .modal-input::placeholder { color: var(--muted); }
+    .modal-input:focus { border-color: rgba(192,132,252,0.5); }
+
+    .emoji-popup {
+      position: fixed;
+      background: var(--bg2);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 0.5rem;
+      z-index: 500;
+      display: none;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.3rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    }
+    .emoji-popup.open { display: grid; }
+
+    .emoji-btn {
+      background: none;
+      border: 1.5px solid transparent;
+      border-radius: 7px;
+      padding: 0.3rem;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.1s;
+      line-height: 1;
+    }
+    .emoji-btn:hover { background: rgba(255,255,255,0.1); transform: scale(1.2); }
+
+    .emoji-trigger { cursor: pointer; transition: transform 0.1s; }
+    .emoji-trigger:hover { transform: scale(1.25); }
+
+    .modal-err { color: #f87171; font-size: 0.82rem; margin-bottom: 0.65rem; min-height: 1.1em; }
+
+    .btn-primary {
+      width: 100%;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 11px;
+      background: linear-gradient(135deg, #7c3aed, #2563eb);
+      color: white;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* ── Toast ───────────────────────────────── */
+    .toast {
+      position: fixed;
+      top: 5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(-10px);
+      background: rgba(15,23,42,0.97);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 14px;
+      padding: 0.9rem 1.6rem;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text);
+      z-index: 800;
+      opacity: 0;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+    .toast-btn {
+      margin-left: 1rem;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 8px;
+      padding: 0.28rem 0.85rem;
+      color: white;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+      vertical-align: middle;
+    }
+    .toast-btn:hover { background: rgba(255,255,255,0.22); }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+
+    /* ── Status bar (PC only) ────────────────── */
+    .top-wrap {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .status-bar {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 1.4rem 2rem;
+      background: rgba(13,17,23,0.82);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sb-clock { line-height: 1; text-align: center; }
+
+    .sb-time {
+      font-size: 2rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      background: linear-gradient(135deg, #c084fc, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+    }
+
+    .sb-date {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.15rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .sb-count {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(34,197,94,0.07);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: 40px;
+      padding: 0.2rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .sb-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px rgba(34,197,94,0.8);
+    }
+
+    @media (min-width: 768px) {
+      .header { position: relative; }
+      .clock-wrap, .online-badge { display: none; }
+      .status-bar { display: flex; }
+    }
+
+    @media (max-width: 600px) {
+      .board { columns: 1; padding: 1rem; }
+      .header { padding: 0.65rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Emoji popup -->
+<div id="emoji-popup" class="emoji-popup"></div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<!-- Modal -->
+<div id="modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-icon">🌙</div>
+    <h2 class="modal-title">Admin Night</h2>
+    <p class="modal-sub" id="modal-sub">어드민 나이트에 온 걸 환영해요</p>
+    <input id="name-input" class="modal-input" type="text" placeholder="이름(닉네임)을 입력하고 시작하세요." maxlength="20" autocomplete="off" autocorrect="off">
+    <p class="modal-err" id="modal-err"></p>
+    <button class="btn-primary" id="btn-join">시작하기</button>
+  </div>
+</div>
+
+<!-- Sidebar -->
+<div class="sidebar-overlay" id="sb-overlay"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-head">
+    <span class="sidebar-title">📅 히스토리</span>
+    <button class="sidebar-close" id="sb-close">✕</button>
+  </div>
+  <div class="session-list" id="session-list"></div>
+  <div class="sidebar-footer">
+    <img src="/logo.png" alt="노마드랑" class="sidebar-logo">
+  </div>
+</div>
+
+<!-- Header + Status bar -->
+<div class="top-wrap">
+  <header class="header">
+    <div class="header-left">
+      <button class="hdr-btn" id="hdr-left-btn">☰</button>
+      <div id="hdr-title-area">
+        <span class="header-title">🌙 Admin Night</span>
+      </div>
+      <span class="readonly-badge" id="readonly-badge" style="display:none">보기 전용</span>
+    </div>
+    <div class="header-right">
+      <div class="online-badge">
+        <span class="dot"></span>
+        <span id="card-count">0명</span>
+      </div>
+      <div class="clock-wrap">
+        <div class="clock-date" id="clock-date"></div>
+        <div class="clock-time" id="clock-time">00:00:00</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- PC 전용 상태바 -->
+  <div class="status-bar">
+    <div class="sb-clock">
+      <div class="sb-time" id="sb-time">00:00:00</div>
+      <div class="sb-date" id="sb-date"></div>
+    </div>
+    <div class="sb-count">
+      <div class="sb-dot"></div>
+      <span id="sb-card-count">0명 참여 중</span>
+    </div>
+  </div>
+</div>
+
+<!-- Empty state -->
+<div id="empty-state" class="empty-state">
+  <div class="e-icon">✨</div>
+  <p>아직 아무도 없어요<br>이름을 입력하고 첫 카드를 만들어보세요!</p>
+</div>
+
+<!-- Board -->
+<div id="board" class="board" style="display:none"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+
+  // ── State ────────────────────────────────────
+  let myCardId  = localStorage.getItem('anCardId');
+  let myName    = localStorage.getItem('anName');
+
+  // ── Emoji popup ───────────────────────────────
+  const EMOJIS = ['😎','🤩','😊','🥳','💪','🔥','⚡','🌟','✨','🎯','🚀','🎉','👑','🦁','🐯','🦊','🐧','🦄','🍕','🎮','🎵','💎','🌙','🐸'];
+  let popupCardId = null;
+
+  function openEmojiPopup(cardId, el) {
+    popupCardId = cardId;
+    const popup = document.getElementById('emoji-popup');
+    popup.innerHTML = EMOJIS.map(e =>
+      `<button class="emoji-btn" onclick="changeEmoji('${e}')">${e}</button>`
+    ).join('');
+    const rect = el.getBoundingClientRect();
+    const left = Math.min(rect.left, window.innerWidth - 230);
+    popup.style.left = left + 'px';
+    popup.style.top  = (rect.bottom + 6) + 'px';
+    popup.classList.add('open');
+  }
+
+  function changeEmoji(emoji) {
+    if (popupCardId) socket.emit('change_emoji', { cardId: popupCardId, emoji });
+    closeEmojiPopup();
+  }
+
+  function closeEmojiPopup() {
+    document.getElementById('emoji-popup').classList.remove('open');
+    popupCardId = null;
+  }
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#emoji-popup') && !e.target.closest('.emoji-trigger'))
+      closeEmojiPopup();
+  });
+  let todayDate = '';
+  let viewDate  = '';
+  let readOnly  = false;
+  const cardsMap = {};
+  let sessionList = [];
+
+  // ── Clock ────────────────────────────────────
+  function tick() {
+    const n = new Date();
+    const timeStr = n.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    const dateStr = n.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+    document.getElementById('clock-time').textContent = timeStr;
+    document.getElementById('clock-date').textContent = dateStr;
+    document.getElementById('sb-time').textContent = timeStr;
+    document.getElementById('sb-date').textContent = dateStr;
+  }
+  tick(); setInterval(tick, 1000);
+
+  // ── Sidebar ───────────────────────────────────
+  function openSidebar() {
+    document.getElementById('sidebar').classList.add('open');
+    document.getElementById('sb-overlay').classList.add('open');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sb-overlay').classList.remove('open');
+  }
+  document.getElementById('sb-overlay').addEventListener('click', closeSidebar);
+  document.getElementById('sb-close').addEventListener('click', closeSidebar);
+
+  function renderSessionList() {
+    const list = document.getElementById('session-list');
+    list.innerHTML = sessionList.map(s => {
+      const isViewing = s.date === viewDate;
+      return `
+        <div class="session-item ${isViewing ? 'viewing' : ''}" onclick="viewSession('${s.date}')">
+          <div class="session-dot" style="background:${s.isActive ? '#22c55e' : 'rgba(255,255,255,0.2)'}${s.isActive ? ';box-shadow:0 0 6px rgba(34,197,94,0.6)' : ''}"></div>
+          <div class="session-info">
+            <div class="session-date">${s.label}${s.isActive ? ' <span style="font-size:0.65rem;color:#4ade80;font-weight:500">(진행 중)</span>' : ''}</div>
+            <div class="session-meta">참여 ${s.cardCount}명</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function viewSession(date) {
+    closeSidebar();
+    socket.emit('view_session', date);
+  }
+
+  function goToToday() {
+    viewSession(todayDate);
+  }
+
+  // ── Header mode ───────────────────────────────
+  function updateHeaderMode() {
+    const btn   = document.getElementById('hdr-left-btn');
+    const title = document.getElementById('hdr-title-area');
+    const badge = document.getElementById('readonly-badge');
+
+    if (!readOnly) {
+      btn.textContent = '☰';
+      btn.onclick = openSidebar;
+      title.innerHTML = `<span class="header-title">🌙 Admin Night</span>`;
+      badge.style.display = 'none';
+    } else {
+      btn.textContent = '← 오늘';
+      btn.style.fontSize = '0.82rem';
+      btn.onclick = goToToday;
+      const s = sessionList.find(s => s.date === viewDate);
+      title.innerHTML = `<span class="header-title-past">📅 ${s ? s.label : viewDate}</span>`;
+      badge.style.display = 'inline-flex';
+    }
+  }
+
+  // ── Board helpers ─────────────────────────────
+  function updateBoard() {
+    const count = Object.keys(cardsMap).length;
+    document.getElementById('card-count').textContent    = count + '명';
+    document.getElementById('sb-card-count').textContent = count + '명 참여 중';
+    document.getElementById('empty-state').style.display = count === 0 ? 'flex' : 'none';
+    document.getElementById('board').style.display       = count === 0 ? 'none' : 'block';
+  }
+
+  function renderBoard() {
+    document.getElementById('board').innerHTML = '';
+    Object.values(cardsMap)
+      .sort((a, b) => a.ts - b.ts)
+      .forEach(c => renderCard(c, false));
+    updateBoard();
+  }
+
+  // ── Socket events ─────────────────────────────
+  socket.on('init', ({ activeDate, cards, sessions }) => {
+    todayDate   = activeDate;
+    viewDate    = activeDate;
+    readOnly    = false;
+    sessionList = sessions;
+
+    Object.keys(cardsMap).forEach(k => delete cardsMap[k]);
+    cards.forEach(c => { cardsMap[c.id] = c; });
+
+    renderBoard();
+    renderSessionList();
+    updateHeaderMode();
+  });
+
+  socket.on('session_data', ({ date, cards, isActive }) => {
+    viewDate  = date;
+    readOnly  = !isActive;
+
+    Object.keys(cardsMap).forEach(k => delete cardsMap[k]);
+    cards.forEach(c => { cardsMap[c.id] = c; });
+
+    renderBoard();
+    renderSessionList();
+    updateHeaderMode();
+  });
+
+  socket.on('sessions_updated', (list) => {
+    sessionList = list;
+    renderSessionList();
+  });
+
+  socket.on('session_ended', ({ newDate, sessions: list }) => {
+    sessionList = list;
+    const el = document.getElementById('toast');
+    el.innerHTML = `🌅 오전 6시! 오늘 세션이 종료됐어요. <button class="toast-btn" onclick="confirmSessionEnd('${newDate}')">확인</button>`;
+    el.classList.add('show');
+  });
+
+  function confirmSessionEnd(newDate) {
+    const el = document.getElementById('toast');
+    el.classList.remove('show');
+    todayDate = newDate;
+    viewDate  = newDate;
+    readOnly  = false;
+    myCardId  = null;
+    localStorage.removeItem('anCardId');
+    Object.keys(cardsMap).forEach(k => delete cardsMap[k]);
+    renderBoard();
+    renderSessionList();
+    updateHeaderMode();
+    modalSub.textContent = '새 세션이 시작됐어요! 이름을 다시 입력해주세요.';
+    nameInp.value = myName || '';
+    modalErr.textContent = '';
+    modal.classList.remove('hidden');
+    nameInp.focus();
+  }
+
+  socket.on('card_created', ({ card, date }) => {
+    if (date === viewDate) {
+      cardsMap[card.id] = card;
+      renderCard(card, true);
+      updateBoard();
+    }
+  });
+
+  socket.on('card_updated', ({ card, date }) => {
+    if (date === viewDate) {
+      cardsMap[card.id] = card;
+      renderCard(card, false);
+    }
+  });
+
+  // ── Modal ─────────────────────────────────────
+  const modal    = document.getElementById('modal');
+  const nameInp  = document.getElementById('name-input');
+  const modalErr = document.getElementById('modal-err');
+  const modalSub = document.getElementById('modal-sub');
+
+  if (myCardId && myName) {
+    modal.classList.add('hidden');
+    socket.emit('rejoin', { cardId: myCardId });
+  }
+
+  socket.on('my_card_id', (id) => {
+    myCardId = id;
+    localStorage.setItem('anCardId', id);
+    modal.classList.add('hidden');
+    if (cardsMap[id]) renderCard(cardsMap[id]);
+  });
+
+  socket.on('card_not_found', () => {
+    myCardId = null;
+    localStorage.removeItem('anCardId');
+    modalSub.textContent = '세션이 만료됐어요. 다시 입력해주세요 😊';
+    modal.classList.remove('hidden');
+    nameInp.focus();
+  });
+
+  socket.on('name_taken', () => {
+    modalErr.textContent = '이미 같은 이름이 있어요! 다른 이름을 써주세요.';
+  });
+
+  document.getElementById('btn-join').addEventListener('click', doJoin);
+  nameInp.addEventListener('keydown', e => { if (e.key === 'Enter') doJoin(); });
+
+  function doJoin() {
+    const name = nameInp.value.trim();
+    if (!name) { modalErr.textContent = '이름을 입력해주세요!'; return; }
+    modalErr.textContent = '';
+    myName = name;
+    localStorage.setItem('anName', name);
+    socket.emit('create_card', { name });
+  }
+
+  // ── Render ────────────────────────────────────
+  function esc(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
+
+  function renderCard(card, isNew = false) {
+    const mine = !readOnly && card.id === myCardId;
+    const t = card.theme;
+
+    let savedTodo = '', savedComment = '';
+    const existing = document.getElementById('card-' + card.id);
+    if (existing) {
+      const ti = document.getElementById('ti-' + card.id);
+      const ci = document.getElementById('ci-' + card.id);
+      if (ti) savedTodo    = ti.value;
+      if (ci) savedComment = ci.value;
+    }
+
+    const doneCnt  = card.todos.filter(t => t.done).length;
+    const totalTodo = card.todos.length;
+
+    let actionBtn = '';
+    if (mine) {
+      if (!card.checkin)
+        actionBtn = `<button class="btn-time btn-checkin" style="background:rgba(34,197,94,0.15);color:#4ade80;border-color:rgba(34,197,94,0.35)" onclick="doCheckin()">체크인 ✓</button>`;
+      else if (!card.checkout)
+        actionBtn = `<button class="btn-time btn-checkout" style="background:rgba(239,68,68,0.15);color:#f87171;border-color:rgba(239,68,68,0.35)" onclick="doCheckout()">체크아웃 ✗</button>`;
+    }
+
+    const todosHtml = card.todos.map(todo => {
+      const chkStyle = todo.done ? `background:${t.accent};border-color:${t.accent};color:#000` : '';
+      const cls      = mine ? 'chk clickable' : 'chk';
+      const onclick  = mine ? ` onclick="doToggleTodo('${card.id}','${todo.id}')"` : '';
+      const delBtn   = mine ? `<button class="del-btn" onclick="doDeleteTodo('${card.id}','${todo.id}')">✕</button>` : '';
+      return `
+        <div class="todo-item ${todo.done ? 'done' : ''}">
+          <div class="${cls}" style="${chkStyle}"${onclick}>${todo.done ? '✓' : ''}</div>
+          <span class="todo-text">${esc(todo.text)}</span>
+          ${delBtn}
+        </div>`;
+    }).join('');
+
+    const todoAddRow = mine ? `
+      <div class="add-row">
+        <input id="ti-${card.id}" class="add-input" placeholder="할 일 추가..." maxlength="100"
+          onkeydown="if(event.key==='Enter')doAddTodo('${card.id}')">
+        <button class="add-btn" style="color:${t.accent}" onclick="doAddTodo('${card.id}')">+</button>
+      </div>` : '';
+
+    const commentsHtml = card.comments.map(c => `
+      <div class="comment">
+        <div class="comment-meta">
+          <span class="comment-author" style="color:${t.accent}">${esc(c.author)}</span>
+          <span class="comment-time">${c.time}</span>
+        </div>
+        <div class="comment-text">${esc(c.text)}</div>
+      </div>`).join('');
+
+    const commentAddRow = (!readOnly && myName) ? `
+      <div class="add-row" style="margin-top:0.5rem">
+        <input id="ci-${card.id}" class="add-input" placeholder="댓글 달기..." maxlength="200"
+          onkeydown="if(event.key==='Enter')doAddComment('${card.id}')">
+        <button class="add-btn" style="color:${t.accent}" onclick="doAddComment('${card.id}')">전송</button>
+      </div>` : '';
+
+    const html = `
+      <div class="card${isNew ? ' new' : ''}" id="card-${card.id}"
+        style="background:${t.bg};border-color:${t.border};box-shadow:0 4px 20px ${t.border.replace('0.4','0.15')}">
+        <div class="card-head" style="background:${t.border.replace('0.4','0.08')}">
+          <div class="card-name" style="color:${t.accent}">
+            ${mine
+              ? `<span class="emoji-trigger" onclick="openEmojiPopup('${card.id}', this)">${card.emoji || '😎'}</span>`
+              : (card.emoji || '😎')}
+            ${esc(card.name)}
+            ${mine ? '<span class="me-tag">나</span>' : ''}
+          </div>
+          ${actionBtn}
+        </div>
+        <div class="card-times">
+          <div class="tbadge">
+            <span class="lbl">🟢 체크인</span>
+            <span class="val" style="color:${t.accent}">${card.checkin || '—'}</span>
+          </div>
+          <div class="tbadge">
+            <span class="lbl">🔴 체크아웃</span>
+            <span class="val" style="color:${t.accent}">${card.checkout || '—'}</span>
+          </div>
+        </div>
+        <div class="card-todos">
+          <div class="sec-title">📝 오늘 할 일${totalTodo ? ' (' + doneCnt + '/' + totalTodo + ')' : ''}</div>
+          ${todosHtml || '<p class="no-item">아직 없어요...</p>'}
+          ${todoAddRow}
+        </div>
+        <div class="card-comments">
+          <div class="sec-title">💬 댓글${card.comments.length ? ' (' + card.comments.length + ')' : ''}</div>
+          ${commentsHtml || '<p class="no-item">첫 댓글을 남겨보세요!</p>'}
+          ${commentAddRow}
+        </div>
+      </div>`;
+
+    const board = document.getElementById('board');
+    if (existing) {
+      existing.outerHTML = html;
+    } else {
+      board.insertAdjacentHTML('beforeend', html);
+    }
+
+    if (savedTodo)    { const ti = document.getElementById('ti-' + card.id); if (ti) ti.value = savedTodo; }
+    if (savedComment) { const ci = document.getElementById('ci-' + card.id); if (ci) ci.value = savedComment; }
+  }
+
+  // ── Toast ─────────────────────────────────────
+  function showToast(msg, duration = 4000) {
+    const el = document.getElementById('toast');
+    el.innerHTML = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), duration);
+  }
+
+  // ── Actions ───────────────────────────────────
+  function doCheckin()  { if (myCardId) socket.emit('checkin',  { cardId: myCardId }); }
+  function doCheckout() { if (myCardId) socket.emit('checkout', { cardId: myCardId }); }
+
+  function doAddTodo(cardId) {
+    const inp = document.getElementById('ti-' + cardId);
+    if (!inp || !inp.value.trim()) return;
+    socket.emit('add_todo', { cardId, text: inp.value });
+    inp.value = '';
+  }
+
+  function doToggleTodo(cardId, todoId) { socket.emit('toggle_todo', { cardId, todoId }); }
+  function doDeleteTodo(cardId, todoId) { socket.emit('delete_todo', { cardId, todoId }); }
+
+  function doAddComment(cardId) {
+    const inp = document.getElementById('ci-' + cardId);
+    if (!inp || !inp.value.trim() || !myName) return;
+    socket.emit('add_comment', { cardId, author: myName, text: inp.value });
+    inp.value = '';
+  }
+</script>
+</body>
+</html>
