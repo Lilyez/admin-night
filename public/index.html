@@ -854,7 +854,11 @@
   function renderBoard() {
     document.getElementById('board').innerHTML = '';
     Object.values(cardsMap)
-      .sort((a, b) => a.ts - b.ts)
+      .sort((a, b) => {
+        if (a.id === myCardId) return -1;
+        if (b.id === myCardId) return 1;
+        return a.ts - b.ts;
+      })
       .forEach(c => renderCard(c, false));
     updateBoard();
   }
