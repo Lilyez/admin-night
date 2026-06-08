@@ -1099,7 +1099,12 @@
   function doCheckin()  { if (myCardId) socket.emit('checkin',  { cardId: myCardId }); }
   function doCheckout() { if (myCardId) socket.emit('checkout', { cardId: myCardId }); }
 
+  function isCheckedIn() {
+    return !!(myCardId && cardsMap[myCardId]?.checkin);
+  }
+
   function doAddTodo(cardId) {
+    if (!isCheckedIn()) { showToast('⏰ 먼저 체크인을 해주세요!'); return; }
     const inp = document.getElementById('ti-' + cardId);
     if (!inp || !inp.value.trim()) return;
     socket.emit('add_todo', { cardId, text: inp.value });
@@ -1110,6 +1115,7 @@
   function doDeleteTodo(cardId, todoId) { socket.emit('delete_todo', { cardId, todoId }); }
 
   function doAddComment(cardId) {
+    if (!isCheckedIn()) { showToast('⏰ 먼저 체크인을 해주세요!'); return; }
     const inp = document.getElementById('ci-' + cardId);
     if (!inp || !inp.value.trim() || !myName) return;
     socket.emit('add_comment', { cardId, author: myName, text: inp.value });
