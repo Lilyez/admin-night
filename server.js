@@ -198,6 +198,21 @@ io.on('connection', (socket) => {
   });
 });
 
+app.post('/admin/reset-today', (req, res) => {
+  const active = activeSessionDate();
+  if (sessions[active]) {
+    sessions[active].cards = {};
+    sessions[active].themeIdx = 0;
+    saveData();
+    io.emit('init', {
+      activeDate: active,
+      cards: [],
+      sessions: getSessionList(),
+    });
+  }
+  res.json({ ok: true, date: active });
+});
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`🌙 Admin Night: http://localhost:${PORT}`);
