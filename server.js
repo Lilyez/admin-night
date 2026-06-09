@@ -77,7 +77,7 @@ function getSessionList() {
 }
 
 function nowTime() {
-  return new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+  return new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Seoul' });
 }
 
 // ── 오전 6시 자동 종료 ─────────────────────────
