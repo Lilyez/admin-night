@@ -147,7 +147,7 @@ io.on('connection', (socket) => {
     const emoji = (typeof rawEmoji === 'string' && [...rawEmoji].length === 1) ? rawEmoji : '😎';
     const card = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      name, emoji, checkin: null, checkout: null, todos: [], comments: [],
+      name, emoji, checkin: nowTime(), checkout: null, todos: [], comments: [],
       theme: THEMES[session.themeIdx++ % THEMES.length],
       ts: Date.now(),
     };
